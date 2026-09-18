@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import EmployeeDirectory from './components/EmployeeDirectory';
 import AddEmployee from './components/AddEmployee';
@@ -13,6 +13,8 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
+        <Route index element={<Navigate to="/employees" replace />} />
+
         <Route
           path="employees"
           element={
