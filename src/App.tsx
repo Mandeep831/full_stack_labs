@@ -1,29 +1,35 @@
 import { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import './App.css';
-import Header from './components/header';
 import EmployeeDirectory from './components/EmployeeDirectory';
-import Footer from './components/footer';
 import AddEmployee from './components/AddEmployee';
+import Organization from './components/Organization';
+import Layout from './components/Layout';
 import { departments } from './interfaces/Department';
 
 function App() {
   const [departmentList, setDepartmentList] = useState(departments);
 
   return (
-    <>
-      <Header />
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route
+          path="employees"
+          element={
+            <>
+              <EmployeeDirectory departments={departmentList} />
 
-      <main>
-        <EmployeeDirectory departments={departmentList} />
-
-        <AddEmployee
-          departments={departmentList}
-          setDepartments={setDepartmentList}
+              <AddEmployee
+                departments={departmentList}
+                setDepartments={setDepartmentList}
+              />
+            </>
+          }
         />
-      </main>
 
-      <Footer />
-    </>
+        <Route path="organization" element={<Organization />} />
+      </Route>
+    </Routes>
   );
 }
 
