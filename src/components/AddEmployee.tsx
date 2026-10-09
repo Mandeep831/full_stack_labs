@@ -1,69 +1,47 @@
-import { useState, type Dispatch, type SetStateAction } from 'react';
+
+import type { FormEvent } from 'react';
 import type { Department } from '../interfaces/Department';
+import type { Employee } from '../interfaces/Employee';
+import useFormInput from '../hooks/useformInput';
+import { addEmployee } from '../services/employeeService';
 
 interface AddEmployeeProps {
   departments: Department[];
-  setDepartments: Dispatch<SetStateAction<Department[]>>;
+  onEmployeeAdded: () => void;
 }
 
-function AddEmployee({ departments, setDepartments }: AddEmployeeProps) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [departmentName, setDepartmentName] = useState('');
-  const [error, setError] = useState('');
+function AddEmployee({ departments, onEmployeeAdded }: AddEmployeeProps) {
+  const firstName = useFormInput('');
+  const lastName = useFormInput('');
+  const departmentName = useFormInput('');
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    // Clear previous validation messages
-    setError('');
+    const employee: Employee = {
+      firstName: firstName.value.trim(),
+      lastName: lastName.value.trim(),
+    };
 
-    // Validate first name
-    if (firstName.trim().length < 3) {
-      setError('First Name must be at least 3 characters long.');
+    const error = addEmployee(departmentName.value, employee);
+
+    if (error) {
+      if (error.includes('First Name')) {
+        firstName.validate(() => error);
+      } else {
+        departmentName.validate(() => error);
+      }
       return;
     }
 
-    // Validate department
-    if (!departmentName) {
-      setError('Please select a department.');
-      return;
-    }
+    firstName.setValue('');
+    lastName.setValue('');
+    departmentName.setValue('');
 
-    // Check that the selected department exists
-    const departmentExists = departments.some(
-      (department) => department.name === departmentName
-    );
+    firstName.validate(() => null);
+    departmentName.validate(() => null);
 
-    if (!departmentExists) {
-      setError('Please select an existing department.');
-      return;
-    }
-
-    // Add the new employee to the selected department
-    setDepartments((currentDepartments) =>
-      currentDepartments.map((department) => {
-        if (department.name === departmentName) {
-          return {
-            ...department,
-            employees: [
-              ...department.employees,
-              {
-                firstName: firstName.trim(),
-                lastName: lastName.trim(),
-              },
-            ],
-          };
-        }
-
-        return department;
-      })
-    );
-
-    // Clear the form after successful submission
-    setFirstName('');
-    setLastName('');
-    setDepartmentName('');
+    onEmployeeAdded();
   }
 
   return (
@@ -76,9 +54,10 @@ function AddEmployee({ departments, setDepartments }: AddEmployeeProps) {
           <input
             id="firstName"
             type="text"
-            value={firstName}
-            onChange={(event) => setFirstName(event.target.value)}
+            value={firstName.value}
+            onChange={(event) => firstName.setValue(event.target.value)}
           />
+          {firstName.message && <p>{firstName.message}</p>}
         </div>
 
         <div>
@@ -86,8 +65,8 @@ function AddEmployee({ departments, setDepartments }: AddEmployeeProps) {
           <input
             id="lastName"
             type="text"
-            value={lastName}
-            onChange={(event) => setLastName(event.target.value)}
+            value={lastName.value}
+            onChange={(event) => lastName.setValue(event.target.value)}
           />
         </div>
 
@@ -95,20 +74,18 @@ function AddEmployee({ departments, setDepartments }: AddEmployeeProps) {
           <label htmlFor="department">Department:</label>
           <select
             id="department"
-            value={departmentName}
-            onChange={(event) => setDepartmentName(event.target.value)}
+            value={departmentName.value}
+            onChange={(event) => departmentName.setValue(event.target.value)}
           >
             <option value="">Select a department</option>
-
             {departments.map((department) => (
               <option key={department.name} value={department.name}>
                 {department.name}
               </option>
             ))}
           </select>
+          {departmentName.message && <p>{departmentName.message}</p>}
         </div>
-
-        {error && <p>{error}</p>}
 
         <button type="submit">Add Employee</button>
       </form>

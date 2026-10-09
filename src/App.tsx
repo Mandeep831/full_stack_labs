@@ -5,10 +5,10 @@ import EmployeeDirectory from './components/EmployeeDirectory';
 import AddEmployee from './components/AddEmployee';
 import Organization from './components/Organization';
 import Layout from './components/Layout';
-import { departments } from './interfaces/Department';
+import { getDepartments } from './apis/employeeRepo';
 
 function App() {
-  const [departmentList, setDepartmentList] = useState(departments);
+  const [departmentList, setDepartmentList] = useState(() => getDepartments());
 
   return (
     <Routes>
@@ -23,7 +23,7 @@ function App() {
 
               <AddEmployee
                 departments={departmentList}
-                setDepartments={setDepartmentList}
+                onEmployeeAdded={() => setDepartmentList(getDepartments())}
               />
             </>
           }
