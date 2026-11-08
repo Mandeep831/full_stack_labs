@@ -1,11 +1,11 @@
 
-import type { Role } from '../interfaces/Role';
+import type { Role } from '../../shared/types/Role';
 import { createRole, getRoles } from '../apis/roleRepo';
 
-export function addRole(newRole: Role): {
+export async function addRole(newRole: Role): Promise<{
   role: Role | null;
   error: string;
-} {
+}> {
   const firstName = newRole.firstName.trim();
   const lastName = newRole.lastName.trim();
   const roleName = newRole.role.trim();
@@ -31,34 +31,39 @@ export function addRole(newRole: Role): {
     };
   }
 
-  const existingRole = getRoles().some(
-    (person) =>
-      person.role.trim().toLowerCase() ===
-      roleName.toLowerCase()
-  );
+  try {
+    const existingRoles = await getRoles();
 
-  if (existingRole) {
+    const existingRole = existingRoles.some(
+      (person) =>
+        person.role.trim().toLowerCase() ===
+        roleName.toLowerCase()
+    );
+
+    if (existingRole) {
+      return {
+        role: null,
+        error: 'This role is already occupied.',
+      };
+    }
+
+    const createdRole = await createRole({
+      firstName,
+      lastName,
+      role: roleName,
+    });
+
+    return {
+      role: createdRole,
+      error: '',
+    };
+  } catch (error) {
     return {
       role: null,
-      error: 'This role is already occupied.',
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to create role.',
     };
   }
-
-  const createdRole = createRole({
-    firstName,
-    lastName,
-    role: roleName,
-  });
-
-  if (!createdRole) {
-    return {
-      role: null,
-      error: 'This role is already occupied.',
-    };
-  }
-
-  return {
-    role: createdRole,
-    error: '',
-  };
 }

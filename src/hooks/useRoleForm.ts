@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { Role } from '../interfaces/Role';
+import type { Role } from '../../shared/types/Role';
 import { addRole } from '../services/roleService';
 
 export function useRoleForm(
@@ -12,10 +12,12 @@ export function useRoleForm(
   const [roleName, setRoleName] = useState('');
   const [error, setError] = useState('');
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
-    const result = addRole({
+    const result = await addRole({
       firstName,
       lastName,
       role: roleName,

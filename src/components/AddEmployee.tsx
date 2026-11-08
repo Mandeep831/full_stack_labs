@@ -1,7 +1,7 @@
 
 import type { FormEvent } from 'react';
-import type { Department } from '../interfaces/Department';
-import type { Employee } from '../interfaces/Employee';
+import type { Department } from '../../shared/types/Department';
+import type { Employee } from '../../shared/types/Employee';
 import useFormInput from '../hooks/useformInput';
 import { addEmployee } from '../services/employeeService';
 
@@ -15,7 +15,7 @@ function AddEmployee({ departments, onEmployeeAdded }: AddEmployeeProps) {
   const lastName = useFormInput('');
   const departmentName = useFormInput('');
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const employee: Employee = {
@@ -23,11 +23,13 @@ function AddEmployee({ departments, onEmployeeAdded }: AddEmployeeProps) {
       lastName: lastName.value.trim(),
     };
 
-    const error = addEmployee(departmentName.value, employee);
+    const error = await addEmployee(departmentName.value, employee);
 
     if (error) {
       if (error.includes('First Name')) {
         firstName.validate(() => error);
+      } else if (error.includes('Last Name')) {
+        lastName.validate(() => error);
       } else {
         departmentName.validate(() => error);
       }
@@ -39,6 +41,7 @@ function AddEmployee({ departments, onEmployeeAdded }: AddEmployeeProps) {
     departmentName.setValue('');
 
     firstName.validate(() => null);
+    lastName.validate(() => null);
     departmentName.validate(() => null);
 
     onEmployeeAdded();
@@ -68,6 +71,7 @@ function AddEmployee({ departments, onEmployeeAdded }: AddEmployeeProps) {
             value={lastName.value}
             onChange={(event) => lastName.setValue(event.target.value)}
           />
+          {lastName.message && <p>{lastName.message}</p>}
         </div>
 
         <div>
