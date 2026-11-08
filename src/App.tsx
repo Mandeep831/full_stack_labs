@@ -1,4 +1,6 @@
-import { useState } from 'react';
+
+import { useEffect, useState } from 'react';
+import type { Department } from '../shared/types/Department';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import EmployeeDirectory from './components/EmployeeDirectory';
@@ -8,7 +10,25 @@ import Layout from './components/Layout';
 import { getDepartments } from './apis/employeeRepo';
 
 function App() {
-  const [departmentList, setDepartmentList] = useState(() => getDepartments());
+  const [departmentList, setDepartmentList] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  async function loadDepartments() {
+    try {
+      const departments = await getDepartments();
+      setDepartmentList(departments);
+      setError('');
+    } catch {
+      setError('Failed to load departments.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadDepartments();
+  }, []);
 
   return (
     <Routes>
@@ -18,14 +38,20 @@ function App() {
         <Route
           path="employees"
           element={
-            <>
-              <EmployeeDirectory departments={departmentList} />
+            loading ? (
+              <p>Loading departments...</p>
+            ) : error ? (
+              <p role="alert">{error}</p>
+            ) : (
+              <>
+                <EmployeeDirectory departments={departmentList} />
 
-              <AddEmployee
-                departments={departmentList}
-                onEmployeeAdded={() => setDepartmentList(getDepartments())}
-              />
-            </>
+                <AddEmployee
+                  departments={departmentList}
+                  onEmployeeAdded={loadDepartments}
+                />
+              </>
+            )
           }
         />
 

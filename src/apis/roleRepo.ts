@@ -1,65 +1,73 @@
 
-import type { Role } from '../interfaces/Role';
-import { roles } from '../interfaces/Role';
+import type { Role } from '../../shared/types/Role';
 
-let roleData: Role[] = roles;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export function getRoles(): Role[] {
-  return roleData;
-}
+export async function getRoles(): Promise<Role[]> {
+  const response = await fetch(`${API_BASE_URL}/api/roles`);
 
-export function createRole(newRole: Role): Role | null {
-  const roleExists = roleData.some(
-    (person) =>
-      person.role.trim().toLowerCase() ===
-      newRole.role.trim().toLowerCase()
-  );
-
-  if (roleExists) {
-    return null;
+  if (!response.ok) {
+    throw new Error('Failed to fetch roles.');
   }
 
-  roleData = [...roleData, newRole];
-
-  return newRole;
+  return response.json();
 }
 
-export function updateRole(
+export async function createRole(newRole: Role): Promise<Role> {
+  const response = await fetch(`${API_BASE_URL}/api/roles`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(newRole),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to create role.');
+  }
+
+  return response.json();
+}
+
+export async function updateRole(
   oldRoleName: string,
   updatedRole: Role
-): Role | null {
-  const index = roleData.findIndex(
-    (person) => person.role === oldRoleName
+): Promise<Role> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/roles/${encodeURIComponent(oldRoleName)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updatedRole),
+    }
   );
 
-  if (index === -1) {
-    return null;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update role.');
   }
 
-  const duplicateRole = roleData.some(
-    (person) =>
-      person.role.trim().toLowerCase() ===
-        updatedRole.role.trim().toLowerCase() &&
-      person.role !== oldRoleName
-  );
-
-  if (duplicateRole) {
-    return null;
-  }
-
-  roleData = roleData.map((person, currentIndex) =>
-    currentIndex === index ? updatedRole : person
-  );
-
-  return updatedRole;
+  return response.json();
 }
 
-export function deleteRole(roleName: string): boolean {
-  const originalLength = roleData.length;
-
-  roleData = roleData.filter(
-    (person) => person.role !== roleName
+export async function deleteRole(roleName: string): Promise<boolean> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/roles/${encodeURIComponent(roleName)}`,
+    {
+      method: 'DELETE',
+    }
   );
 
-  return roleData.length < originalLength;
+  if (response.status === 404) {
+    return false;
+  }
+
+  if (!response.ok) {
+    throw new Error('Failed to delete role.');
+  }
+
+  return true;
 }

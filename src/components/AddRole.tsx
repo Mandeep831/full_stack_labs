@@ -1,5 +1,5 @@
 
-import type { Role } from '../interfaces/Role';
+import type { Role } from '../../shared/types/Role';
 import { useRoleForm } from '../hooks/useRoleForm';
 
 interface AddRoleProps {

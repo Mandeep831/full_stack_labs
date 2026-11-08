@@ -1,4 +1,4 @@
-import type { Employee } from './Employee';
+import type { Employee } from './Employee.js';
 
 export interface Department {
   name: string;

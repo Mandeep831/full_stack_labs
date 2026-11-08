@@ -1,4 +1,4 @@
-import type { Department } from '../interfaces/Department';
+import type { Department } from '../../shared/types/Department';
 
 interface EmployeeDirectoryProps {
   departments: Department[];

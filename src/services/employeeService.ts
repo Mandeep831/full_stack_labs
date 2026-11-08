@@ -1,14 +1,15 @@
-import type { Employee } from '../interfaces/Employee';
+
+import type { Employee } from '../../shared/types/Employee';
 import {
   createEmployee,
   getDepartments,
 } from '../apis/employeeRepo';
 
-export function addEmployee(
+export async function addEmployee(
   departmentName: string,
   employee: Employee
-): string | null {
-  const departments = getDepartments();
+): Promise<string | null> {
+  const departments = await getDepartments();
 
   const departmentExists = departments.some(
     (department) => department.name === departmentName
@@ -22,10 +23,20 @@ export function addEmployee(
     return 'First Name must be at least 3 characters long.';
   }
 
-  createEmployee(departmentName, {
-    firstName: employee.firstName.trim(),
-    lastName: employee.lastName.trim(),
-  });
+  if (!employee.lastName.trim()) {
+    return 'Last Name is required.';
+  }
 
-  return null;
+  try {
+    await createEmployee(departmentName, {
+      firstName: employee.firstName.trim(),
+      lastName: employee.lastName.trim(),
+    });
+
+    return null;
+  } catch (error) {
+    return error instanceof Error
+      ? error.message
+      : 'Failed to create employee.';
+  }
 }
