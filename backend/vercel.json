@@ -1,11 +1,5 @@
 {
   "relatedProjects": [
     "prj_6rLEPzh30ooAzauAI4fXBWCTxI6X"
-  ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api"
-    }
   ]
 }
