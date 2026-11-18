@@ -9,11 +9,13 @@ import {
   deleteRole,
 } from "../repositories/roleRepository";
 
-export function getAllRoles(): Role[] {
+export async function getAllRoles(): Promise<Role[]> {
   return getRoles();
 }
 
-export function addRole(newRole: Role): Role | string {
+export async function addRole(
+  newRole: Role
+): Promise<Role | string> {
   const firstName = newRole.firstName.trim();
   const lastName = newRole.lastName.trim();
   const roleName = newRole.role.trim();
@@ -30,7 +32,7 @@ export function addRole(newRole: Role): Role | string {
     return "Role is required.";
   }
 
-  const createdRole = createRole({
+  const createdRole = await createRole({
     firstName,
     lastName,
     role: roleName,
@@ -43,10 +45,10 @@ export function addRole(newRole: Role): Role | string {
   return createdRole;
 }
 
-export function editRole(
+export async function editRole(
   oldRoleName: string,
   updatedRole: Role
-): Role | string {
+): Promise<Role | string> {
   const firstName = updatedRole.firstName.trim();
   const lastName = updatedRole.lastName.trim();
   const roleName = updatedRole.role.trim();
@@ -63,7 +65,7 @@ export function editRole(
     return "Role is required.";
   }
 
-  const result = updateRole(oldRoleName, {
+  const result = await updateRole(oldRoleName, {
     firstName,
     lastName,
     role: roleName,
@@ -72,6 +74,8 @@ export function editRole(
   return result ?? "Role not found or already occupied.";
 }
 
-export function removeRole(roleName: string): boolean {
+export async function removeRole(
+  roleName: string
+): Promise<boolean> {
   return deleteRole(roleName);
 }

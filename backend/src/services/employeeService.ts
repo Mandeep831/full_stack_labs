@@ -1,3 +1,4 @@
+
 import type { Employee } from "../../../shared/types/Employee.js" with {
   "resolution-mode": "import",
 };
@@ -6,21 +7,24 @@ import {
   getDepartments,
   getEmployees,
   createEmployee,
+  deleteEmployee,
 } from "../repositories/employeeRepository";
 
-export function getAllDepartments() {
+export async function getAllDepartments() {
   return getDepartments();
 }
 
-export function getAllEmployees(departmentName?: string) {
+export async function getAllEmployees(departmentName?: string) {
   return getEmployees(departmentName);
 }
 
-export function addEmployee(
+export async function addEmployee(
   departmentName: string,
   employee: Employee
-): Employee | string {
-  const departmentExists = getDepartments().some(
+): Promise<Employee | string> {
+  const departments = await getDepartments();
+
+  const departmentExists = departments.some(
     (department) => department.name === departmentName
   );
 
@@ -39,5 +43,13 @@ export function addEmployee(
   return createEmployee(departmentName, {
     firstName: employee.firstName.trim(),
     lastName: employee.lastName.trim(),
-  })!;
+  }) as Promise<Employee>;
+}
+
+export async function removeEmployee(
+  departmentName: string,
+  firstName: string,
+  lastName: string
+): Promise<boolean> {
+  return deleteEmployee(departmentName, firstName, lastName);
 }

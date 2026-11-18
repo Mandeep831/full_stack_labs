@@ -1,102 +1,122 @@
-import type { Role } from "../../../shared/types/Role.js" with {
-  "resolution-mode": "import",
+import prisma from "../lib/prisma";
+
+type RoleInput = {
+  firstName: string;
+  lastName: string;
+  role: string;
 };
 
-let roleData: Role[] = [
-  { firstName: "Jo-Anne", lastName: "Sinclair", role: "CEO/Chair of Board" },
-  { firstName: "Jackson", lastName: "Smith", role: "COO/VP Operations" },
-  { firstName: "Susan", lastName: "Thomas", role: "CFO/VP Administration" },
-  { firstName: "Richa", lastName: "Kaur", role: "VP Client Services" },
-  { firstName: "Josee", lastName: "Benjamin", role: "CIO" },
-  { firstName: "Vincent", lastName: "Grey", role: "VP Sales & Marketing" },
-  { firstName: "Rupa", lastName: "Kharki", role: "Director Financial and Audit Svcs" },
-  { firstName: "Xun", lastName: "Kuang", role: "Director Human Resources" },
-  { firstName: "Stien", lastName: "Pedersen", role: "Director Legal Services/General Counsel" },
-  { firstName: "Sandra", lastName: "Bear", role: "Director Information Technology" },
-  { firstName: "Gus", lastName: "Blue", role: "Director Information Security and CISSO" },
-  { firstName: "Sam", lastName: "Kong", role: "Director Accounting" },
-  { firstName: "Valentine", lastName: "Smith", role: "Director Physical Security" },
-  { firstName: "Mariya", lastName: "Kaperski", role: "Director Facilities" },
-  {
-    firstName: "Abd al-Hamid",
-    lastName: "Alami",
-    role: "Manager, Business Continuity and Disaster Recovery",
-  },
-  { firstName: "Victoria", lastName: "Gray", role: "Manager, Internal Audit" },
-  { firstName: "Cheryl", lastName: "Guru", role: "Chief Architect" },
-  { firstName: "Jean", lastName: "Ngoy", role: "Manager, Security Architecture" },
-  { firstName: "Kris", lastName: "Gold", role: "Solution Architect, Online Banking" },
-  { firstName: "Isaac", lastName: "Smith", role: "Manager, Application Solutions" },
-  { firstName: "Payton", lastName: "Frost", role: "Lead Developer, Online Banking" },
-  { firstName: "Samantha", lastName: "Nettle", role: "Manager, Operational Risk" },
-  { firstName: "Yolanda", lastName: "Ferreira", role: "Manager, Vendor Relations" },
-  { firstName: "Samir", lastName: "Hassan", role: "Manager, Purchasing" },
-  { firstName: "Yuna", lastName: "Aikawa", role: "Manager, Communications" },
-  {
-    firstName: "Jonathan",
-    lastName: "Carberry",
-    role: "Manager Customer Experience and Community Eng.",
-  },
-  { firstName: "Roland", lastName: "Wei", role: "Manager of Sales" },
-  { firstName: "Pran", lastName: "Singh", role: "Manager, Marketing" },
-];
+export async function getRoles(): Promise<RoleInput[]> {
+  const roles = await prisma.role.findMany({
+    include: {
+      employees: true,
+    },
+    orderBy: {
+      id: "asc",
+    },
+  });
 
-export function getRoles(): Role[] {
-  return roleData;
+  return roles.flatMap((role) =>
+    role.employees.map((employee) => ({
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      role: role.title,
+    }))
+  );
 }
 
-export function createRole(newRole: Role): Role | null {
-  const roleExists = roleData.some(
-    (person) =>
-      person.role.trim().toLowerCase() ===
-      newRole.role.trim().toLowerCase()
-  );
+export async function createRole(newRole: RoleInput) {
+  const roleName = newRole.role.trim();
 
-  if (roleExists) {
+  const existingRole = await prisma.role.findUnique({
+    where: { title: roleName },
+  });
+
+  if (existingRole) {
     return null;
   }
 
-  roleData = [...roleData, newRole];
+  await prisma.role.create({
+    data: {
+      title: roleName,
+      employees: {
+        create: {
+          firstName: newRole.firstName,
+          lastName: newRole.lastName,
+        },
+      },
+    },
+  });
 
-  return newRole;
+  return {
+    firstName: newRole.firstName,
+    lastName: newRole.lastName,
+    role: roleName,
+  };
 }
 
-export function updateRole(
+export async function updateRole(
   oldRoleName: string,
-  updatedRole: Role
-): Role | null {
-  const index = roleData.findIndex(
-    (person) => person.role === oldRoleName
-  );
+  updatedRole: RoleInput
+) {
+  const existingRole = await prisma.role.findUnique({
+    where: { title: oldRoleName },
+  });
 
-  if (index === -1) {
+  if (!existingRole) {
     return null;
   }
 
-  const duplicateRole = roleData.some(
-    (person) =>
-      person.role.trim().toLowerCase() ===
-        updatedRole.role.trim().toLowerCase() &&
-      person.role !== oldRoleName
-  );
+  const newRoleName = updatedRole.role.trim();
 
-  if (duplicateRole) {
+  const duplicateRole = await prisma.role.findUnique({
+    where: { title: newRoleName },
+  });
+
+  if (duplicateRole && duplicateRole.id !== existingRole.id) {
     return null;
   }
 
-  roleData = roleData.map((person, currentIndex) =>
-    currentIndex === index ? updatedRole : person
-  );
+  return prisma.$transaction(async (tx) => {
+    await tx.role.update({
+      where: { id: existingRole.id },
+      data: { title: newRoleName },
+    });
 
-  return updatedRole;
+    await tx.employee.updateMany({
+      where: { roleId: existingRole.id },
+      data: {
+        firstName: updatedRole.firstName,
+        lastName: updatedRole.lastName,
+      },
+    });
+
+    return {
+      firstName: updatedRole.firstName,
+      lastName: updatedRole.lastName,
+      role: newRoleName,
+    };
+  });
 }
 
-export function deleteRole(roleName: string): boolean {
-  const originalLength = roleData.length;
+export async function deleteRole(roleName: string) {
+  const existingRole = await prisma.role.findUnique({
+    where: { title: roleName },
+  });
 
-  roleData = roleData.filter(
-    (person) => person.role !== roleName
-  );
+  if (!existingRole) {
+    return false;
+  }
 
-  return roleData.length < originalLength;
+  await prisma.$transaction(async (tx) => {
+    await tx.employee.deleteMany({
+      where: { roleId: existingRole.id },
+    });
+
+    await tx.role.delete({
+      where: { id: existingRole.id },
+    });
+  });
+
+  return true;
 }

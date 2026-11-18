@@ -7,18 +7,19 @@ import {
   removeRole,
 } from "../services/roleService";
 
-export function getRoles(
+export async function getRoles(
   req: Request,
   res: Response
-): void {
-  res.status(200).json(getAllRoles());
+): Promise<void> {
+  const roles = await getAllRoles();
+  res.status(200).json(roles);
 }
 
-export function createRole(
+export async function createRole(
   req: Request,
   res: Response
-): void {
-  const result = addRole(req.body);
+): Promise<void> {
+  const result = await addRole(req.body);
 
   if (typeof result === "string") {
     res.status(400).json({ message: result });
@@ -28,12 +29,12 @@ export function createRole(
   res.status(201).json(result);
 }
 
-export function updateRole(
+export async function updateRole(
   req: Request,
   res: Response
-): void {
+): Promise<void> {
   const oldRoleName = String(req.params.oldRoleName);
-  const result = editRole(oldRoleName, req.body);
+  const result = await editRole(oldRoleName, req.body);
 
   if (typeof result === "string") {
     res.status(400).json({ message: result });
@@ -43,11 +44,11 @@ export function updateRole(
   res.status(200).json(result);
 }
 
-export function deleteRole(
+export async function deleteRole(
   req: Request,
   res: Response
-): void {
-  const deleted = removeRole(String(req.params.roleName));
+): Promise<void> {
+  const deleted = await removeRole(String(req.params.roleName));
 
   if (!deleted) {
     res.status(404).json({ message: "Role not found." });
