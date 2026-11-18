@@ -11,8 +11,17 @@ export async function getDepartments(
   req: Request,
   res: Response
 ): Promise<void> {
-  const departments = await getAllDepartments();
-  res.status(200).json(departments);
+  try {
+    const departments = await getAllDepartments();
+    res.status(200).json(departments);
+  } catch (error) {
+    console.error("GET DEPARTMENTS ERROR:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch departments",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 export async function getEmployees(
