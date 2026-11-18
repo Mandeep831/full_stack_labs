@@ -4,33 +4,36 @@ import {
   getAllDepartments,
   getAllEmployees,
   addEmployee,
+  removeEmployee, 
 } from "../services/employeeService";
 
-export function getDepartments(
+export async function getDepartments(
   req: Request,
   res: Response
-): void {
-  res.status(200).json(getAllDepartments());
+): Promise<void> {
+  const departments = await getAllDepartments();
+  res.status(200).json(departments);
 }
 
-export function getEmployees(
+export async function getEmployees(
   req: Request,
   res: Response
-): void {
+): Promise<void> {
   const departmentName = req.query.departmentName as
     | string
     | undefined;
 
-  res.status(200).json(getAllEmployees(departmentName));
+  const employees = await getAllEmployees(departmentName);
+  res.status(200).json(employees);
 }
 
-export function createEmployee(
+export async function createEmployee(
   req: Request,
   res: Response
-): void {
+): Promise<void> {
   const { departmentName, employee } = req.body;
 
-  const result = addEmployee(departmentName, employee);
+  const result = await addEmployee(departmentName, employee);
 
   if (typeof result === "string") {
     res.status(400).json({ message: result });
@@ -38,4 +41,24 @@ export function createEmployee(
   }
 
   res.status(201).json(result);
+}
+
+export async function deleteEmployee(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const { departmentName, firstName, lastName } = req.body;
+
+  const deleted = await removeEmployee(
+    departmentName,
+    firstName,
+    lastName
+  );
+
+  if (!deleted) {
+    res.status(404).json({ message: "Employee not found." });
+    return;
+  }
+
+  res.status(204).send();
 }
